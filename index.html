@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Grader Genie — AI-Powered Homework Grading</title>
+<link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<style>
+  /* ── Landing-page overrides & new components ── */
+
+  /* Animated counter */
+  @keyframes countUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+
+  /* CTA section */
+  .cta-sec {
+    padding: 96px 24px;
+    background: var(--bg);
+    position: relative; overflow: hidden;
+    text-align: center;
+  }
+  .cta-sec::before {
+    content: '';
+    position: absolute; inset: 0;
+    background:
+      radial-gradient(ellipse 70% 60% at 50% 50%, rgba(0,212,170,.07), transparent 70%);
+    pointer-events: none;
+  }
+  .cta-box {
+    max-width: 680px; margin: 0 auto;
+    background: var(--s1);
+    border: 1px solid rgba(0,212,170,.22);
+    border-radius: 24px;
+    padding: 56px 40px;
+    position: relative; z-index: 1;
+    box-shadow: 0 0 64px rgba(0,212,170,.08), var(--sh4);
+  }
+  .cta-box::before {
+    content: ''; position: absolute; inset: -1px; border-radius: 25px;
+    background: linear-gradient(135deg, rgba(0,212,170,.18), transparent 50%, rgba(34,211,238,.1));
+    z-index: -1;
+  }
+  .cta-box h2 { font-size: clamp(26px,3.5vw,38px); font-weight: 800; letter-spacing: -.04em; margin-bottom: 14px; }
+  .cta-box p { font-size: 15px; color: var(--t2); margin-bottom: 32px; line-height: 1.72; }
+  .cta-btns { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
+
+  /* Trusted logos marquee */
+  .trusted-wrap { overflow: hidden; position: relative; }
+  .trusted-wrap::before,
+  .trusted-wrap::after {
+    content: ''; position: absolute; top: 0; bottom: 0; width: 80px; z-index: 2; pointer-events: none;
+  }
+  .trusted-wrap::before { left: 0; background: linear-gradient(90deg, var(--s0), transparent); }
+  .trusted-wrap::after  { right: 0; background: linear-gradient(-90deg, var(--s0), transparent); }
+
+  .trusted-track {
+    display: flex; gap: 48px; width: max-content;
+    animation: marquee 22s linear infinite;
+  }
+  @keyframes marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+  .trusted-track:hover { animation-play-state: paused; }
+
+  .t-logo {
+    font-size: 11px; font-weight: 800; letter-spacing: .16em;
+    text-transform: uppercase; color: var(--t4);
+    white-space: nowrap; padding: 4px 0;
+    transition: color .2s;
+  }
+  .t-logo:hover { color: var(--teal); }
+
+  /* Step connector lines */
+  .steps-grid { position: relative; }
+  .steps-grid::before {
+    content: '';
+    position: absolute; top: 27px; left: calc(12.5% + 27px); right: calc(12.5% + 27px); height: 1px;
+    background: linear-gradient(90deg, var(--teal), var(--cyan), var(--violet));
+    opacity: .2;
+  }
+
+  /* Feature card icon glow on hover */
+  .feat-card:hover .feat-ico { transform: scale(1.12) rotate(-4deg); transition: transform .22s var(--spring); }
+
+  /* Social proof numbers */
+  .proof-row {
+    display: flex; gap: 0; max-width: 760px; margin: 0 auto 56px;
+    border: 1px solid var(--b2); border-radius: var(--r16);
+    background: var(--s1); overflow: hidden;
+  }
+  .proof-item {
+    flex: 1; padding: 24px 28px; text-align: center;
+    border-right: 1px solid var(--b2);
+    position: relative;
+  }
+  .proof-item:last-child { border-right: none; }
+  .proof-item::before {
+    content: ''; position: absolute; bottom: 0; left: 20%; right: 20%; height: 2px;
+    background: linear-gradient(90deg, transparent, var(--teal), transparent);
+    opacity: 0; transition: opacity .22s;
+  }
+  .proof-item:hover::before { opacity: 1; }
+  .proof-num { font-size: 30px; font-weight: 800; letter-spacing: -.04em; color: var(--t1); }
+  .proof-num span { color: var(--teal); }
+  .proof-lbl { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .1em; color: var(--t4); margin-top: 4px; }
+
+  /* Floating badge on hero */
+  .hero-badge {
+    position: absolute; right: calc(50% - 480px); top: 120px;
+    background: var(--s1); border: 1px solid var(--b2);
+    border-radius: 14px; padding: 12px 18px;
+    display: flex; align-items: center; gap: 10px;
+    box-shadow: var(--sh2), 0 0 24px rgba(52,211,153,.08);
+    animation: floatBadge 6s ease-in-out infinite;
+    z-index: 2;
+  }
+  .hero-badge2 {
+    position: absolute; left: calc(50% - 500px); top: 200px;
+    background: var(--s1); border: 1px solid var(--b2);
+    border-radius: 14px; padding: 12px 18px;
+    display: flex; align-items: center; gap: 10px;
+    box-shadow: var(--sh2), 0 0 24px rgba(167,139,250,.08);
+    animation: floatBadge 7s ease-in-out infinite reverse;
+    z-index: 2;
+  }
+  @keyframes floatBadge {
+    0%,100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+  }
+  @media (max-width: 1100px) { .hero-badge, .hero-badge2 { display: none; } }
+  .hb-icon { width: 34px; height: 34px; border-radius: 9px; display: flex; align-items: center; justify-content: center; font-size: 15px; flex-shrink: 0; }
+  .hb-val { font-size: 15px; font-weight: 800; color: var(--t1); }
+  .hb-sub { font-size: 11px; color: var(--t3); }
+
+  /* Animated glow ring behind CTA primary button */
+  @keyframes ringPulse { 0%,100% { box-shadow: 0 0 0 0 rgba(0,212,170,.35), var(--st); } 50% { box-shadow: 0 0 0 10px rgba(0,212,170,0), var(--st); } }
+  .btn-ring { animation: ringPulse 2.8s ease-in-out infinite; }
+
+  /* Feature section sub-label */
+  .feat-card .f-label {
+    display: inline-flex; align-items: center; gap: 4px;
+    font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .09em;
+    padding: 2px 8px; border-radius: 99px; margin-bottom: 14px;
+    background: var(--tp); color: var(--teal); border: 1px solid var(--b3);
+  }
+
+  /* Scroll indicator */
+  .scroll-hint {
+    display: flex; flex-direction: column; align-items: center; gap: 6px;
+    color: var(--t4); font-size: 11px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: .12em;
+    margin-top: 60px; animation: fadeInUp 1s 1.2s both;
+  }
+  .scroll-hint i { animation: bounce 1.6s ease-in-out infinite; font-size: 14px; }
+  @keyframes bounce { 0%,100% { transform: translateY(0); } 50% { transform: translateY(5px); } }
+  @keyframes fadeInUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+
+  /* Topbar nav links */
+  .nav-link {
+    font-size: 13px; font-weight: 600; color: var(--t3);
+    padding: 6px 12px; border-radius: var(--r8);
+    transition: color .14s, background .14s;
+  }
+  .nav-link:hover { color: var(--t1); background: var(--g1); }
+</style>
+</head>
+<body class="land">
+
+<!-- BG LAYERS -->
+<div class="land-bg"></div>
+<div class="aurora-line"></div>
+
+<!-- HEADER -->
+<header class="site-hdr">
+  <div class="logo">
+    <div class="lm">GG</div>
+    <div class="lt">Grader<span>Genie</span></div>
+  </div>
+  <nav class="hdr-nav">
+    <a href="#features" class="nav-link">Features</a>
+    <a href="#how" class="nav-link">How it works</a>
+    <a href="#testimonials" class="nav-link">Testimonials</a>
+    <div style="width:1px;height:22px;background:var(--b2);margin:0 4px"></div>
+    <button class="btn bg2 bsm" onclick="openModal('loginModal')"><i class="fas fa-sign-in-alt"></i> Sign in</button>
+    <button class="btn bt bsm btn-ring" onclick="openModal('signupModal')"><i class="fas fa-rocket"></i> Get started free</button>
+  </nav>
+</header>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="orb orb1"></div>
+  <div class="orb orb2"></div>
+  <div class="orb orb3"></div>
+
+  <!-- Floating badges -->
+  <div class="hero-badge">
+    <div class="hb-icon" style="background:var(--gp);color:var(--green)"><i class="fas fa-circle-check"></i></div>
+    <div>
+      <div class="hb-val">97% accuracy</div>
+      <div class="hb-sub">AI grading precision</div>
+    </div>
+  </div>
+  <div class="hero-badge2">
+    <div class="hb-icon" style="background:var(--vp);color:var(--violet)"><i class="fas fa-bolt"></i></div>
+    <div>
+      <div class="hb-val">&lt; 3 seconds</div>
+      <div class="hb-sub">Per submission</div>
+    </div>
+  </div>
+
+  <div class="h-pill">
+    <div class="live-dot"></div>
+    Powered by AI · Now in Beta
+  </div>
+
+  <h1 class="h-title">
+    Grade smarter.<br>
+    <em class="h-grad" style="font-style:normal">Not harder.</em>
+  </h1>
+
+  <p class="h-desc">
+    Grader Genie combines AI-generated feedback, rubric scoring, and deep analytics to give every student the personalised response they deserve — in seconds.
+  </p>
+
+  <div class="h-cta">
+    <a href="homework-grader.html" class="btn bt blg btn-ring">
+      <i class="fas fa-wand-magic-sparkles"></i> Open Grader — It's Free
+    </a>
+    <button class="btn bg2 blg" onclick="openModal('signupModal')">
+      <i class="fas fa-user-plus"></i> Create free account
+    </button>
+  </div>
+
+  <!-- Social proof strip -->
+  <div class="stats-strip">
+    <div style="text-align:center">
+      <div class="stat-num" id="cnt-speed">10×</div>
+      <div class="stat-lbl">Faster Grading</div>
+    </div>
+    <div class="stat-div"></div>
+    <div style="text-align:center">
+      <div class="stat-num">100%</div>
+      <div class="stat-lbl">AI-Powered</div>
+    </div>
+    <div class="stat-div"></div>
+    <div style="text-align:center">
+      <div class="stat-num" style="color:var(--green)">Free</div>
+      <div class="stat-lbl">No credit card</div>
+    </div>
+    <div class="stat-div"></div>
+    <div style="text-align:center">
+      <div class="stat-num">∞</div>
+      <div class="stat-lbl">Submissions</div>
+    </div>
+  </div>
+
+  <div class="scroll-hint">
+    <span>Scroll to explore</span>
+    <i class="fas fa-chevron-down"></i>
+  </div>
+</section>
+
+<!-- TRUSTED BY -->
+<div style="background:var(--s0);border-top:1px solid var(--b1);border-bottom:1px solid var(--b1);padding:28px 0;">
+  <p style="text-align:center;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.14em;color:var(--t4);margin-bottom:18px;">
+    Trusted by educators at
+  </p>
+  <div class="trusted-wrap">
+    <div class="trusted-track">
+      <!-- Two sets for seamless loop -->
+      <span class="t-logo">Westbrook Academy</span>
+      <span class="t-logo">Maplewood High</span>
+      <span class="t-logo">Cedar Ridge School</span>
+      <span class="t-logo">Horizon Prep</span>
+      <span class="t-logo">Pinecrest District</span>
+      <span class="t-logo">Elmhurst College</span>
+      <span class="t-logo">Northview Unified</span>
+      <span class="t-logo">Sunrise Charter</span>
+      <!-- Duplicate for loop -->
+      <span class="t-logo">Westbrook Academy</span>
+      <span class="t-logo">Maplewood High</span>
+      <span class="t-logo">Cedar Ridge School</span>
+      <span class="t-logo">Horizon Prep</span>
+      <span class="t-logo">Pinecrest District</span>
+      <span class="t-logo">Elmhurst College</span>
+      <span class="t-logo">Northview Unified</span>
+      <span class="t-logo">Sunrise Charter</span>
+    </div>
+  </div>
+</div>
+
+<!-- PROOF NUMBERS -->
+<div style="background:var(--bg);padding:72px 24px 0;">
+  <div class="proof-row rv">
+    <div class="proof-item">
+      <div class="proof-num"><span id="n-subs">0</span>K+</div>
+      <div class="proof-lbl">Submissions graded</div>
+    </div>
+    <div class="proof-item">
+      <div class="proof-num"><span id="n-teachers">0</span>+</div>
+      <div class="proof-lbl">Active teachers</div>
+    </div>
+    <div class="proof-item">
+      <div class="proof-num"><span id="n-hours">0</span>h</div>
+      <div class="proof-lbl">Teacher hours saved</div>
+    </div>
+    <div class="proof-item">
+      <div class="proof-num"><span style="color:var(--teal)">4.9</span><span style="font-size:18px;color:var(--t3)">/5</span></div>
+      <div class="proof-lbl">Educator rating</div>
+    </div>
+  </div>
+</div>
+
+<!-- FEATURES -->
+<section class="feat-sec" id="features">
+  <div class="sec-inner">
+    <div class="sec-tag">Features</div>
+    <h2 class="sec-head">Everything a great educator needs</h2>
+    <div class="feat-grid">
+
+      <div class="feat-card rv">
+        <div class="feat-ico fi-t"><i class="fas fa-wand-magic-sparkles"></i></div>
+        <h3>AI Feedback Generator</h3>
+        <p>One click to generate warm, specific, constructive feedback tailored to each student's grade level and work quality.</p>
+      </div>
+
+      <div class="feat-card rv">
+        <div class="feat-ico fi-c"><i class="fas fa-list-check"></i></div>
+        <h3>Rubric Grader</h3>
+        <p>Score across multiple criteria — thesis, evidence, clarity — and automatically convert to a final weighted grade.</p>
+      </div>
+
+      <div class="feat-card rv">
+        <div class="feat-ico fi-r"><i class="fas fa-chart-line"></i></div>
+        <h3>Analytics Dashboard</h3>
+        <p>Visualise grade distributions, track trends over time, and immediately spot which students need extra support.</p>
+      </div>
+
+      <div class="feat-card rv">
+        <div class="feat-ico fi-g"><i class="fas fa-users"></i></div>
+        <h3>Student Profiles</h3>
+        <p>Each student gets a performance card — average, best score, and subject breakdown at a single glance.</p>
+      </div>
+
+      <div class="feat-card rv">
+        <div class="feat-ico fi-v"><i class="fas fa-trophy"></i></div>
+        <h3>Class Leaderboard</h3>
+        <p>Motivate students with a transparent performance leaderboard showing averages and submission counts.</p>
+      </div>
+
+      <div class="feat-card rv">
+        <div class="feat-ico fi-e"><i class="fas fa-file-export"></i></div>
+        <h3>Export & Import</h3>
+        <p>Download all grades as JSON or CSV. Import previous data seamlessly to keep your records perfectly intact.</p>
+      </div>
+
+      <div class="feat-card rv">
+        <div class="feat-ico fi-t"><i class="fas fa-clipboard-list"></i></div>
+        <h3>Assignment Tracker</h3>
+        <p>See completion rates per assignment across your class — identify which work is lagging or overdue.</p>
+      </div>
+
+      <div class="feat-card rv">
+        <div class="feat-ico fi-c"><i class="fas fa-note-sticky"></i></div>
+        <h3>Quick Notes</h3>
+        <p>Jot private notes tied to your class — lesson reminders, parent-meeting points, or personal observations.</p>
+      </div>
+
+      <div class="feat-card rv">
+        <div class="feat-ico fi-r"><i class="fas fa-user-circle"></i></div>
+        <h3>Teacher Profile</h3>
+        <p>Personalise your workspace, track grading activity, and manage all your preferences in one place.</p>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section class="how-sec" id="how">
+  <div class="how-inner">
+    <div class="sec-tag" style="justify-content:center">How it works</div>
+    <h2 class="sec-head" style="max-width:100%;text-align:center;margin:0 auto 16px">Four steps to better feedback</h2>
+    <p style="color:var(--t3);font-size:15px;max-width:460px;margin:0 auto 56px;line-height:1.72;">
+      From blank page to professional feedback in under a minute. No training needed.
+    </p>
+    <div class="steps-grid">
+      <div class="step-item rv">
+        <div class="step-num">1</div>
+        <h4>Enter submission</h4>
+        <p>Add the student name, assignment, subject, and paste their answer or notes.</p>
+      </div>
+      <div class="step-item rv">
+        <div class="step-num">2</div>
+        <h4>Score with rubric</h4>
+        <p>Use the rubric grader to score each criterion — the final grade calculates automatically.</p>
+      </div>
+      <div class="step-item rv">
+        <div class="step-num">3</div>
+        <h4>Generate AI feedback</h4>
+        <p>Hit the AI button and get professional, personalised written feedback in under 3 seconds.</p>
+      </div>
+      <div class="step-item rv">
+        <div class="step-num">4</div>
+        <h4>Review & export</h4>
+        <p>Browse analytics, compare students, and export your gradebook whenever you need.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- TESTIMONIALS -->
+<section class="test-sec" id="testimonials">
+  <div style="max-width:1040px;margin:0 auto">
+    <div class="sec-tag" style="justify-content:center">Educators love it</div>
+    <h2 class="sec-head" style="max-width:100%;text-align:center;margin:12px auto 0">
+      Real teachers. Real results.
+    </h2>
+    <div class="test-grid">
+      <div class="test-card rv">
+        <p class="test-txt">I used to spend 3 hours every Sunday grading. With Grader Genie I finish in 40 minutes and the feedback quality is genuinely better than what I was writing by hand.</p>
+        <div class="test-author">
+          <div class="test-ava">SJ</div>
+          <div>
+            <div class="test-name">Sarah Johnson</div>
+            <div class="test-role">Grade 10 English · Maplewood High</div>
+          </div>
+        </div>
+      </div>
+      <div class="test-card rv">
+        <p class="test-txt">The rubric grader is a game-changer. I set my criteria once and the grades are consistent — no more worrying about whether I'm harder on Friday submissions than Monday ones.</p>
+        <div class="test-author">
+          <div class="test-ava">MR</div>
+          <div>
+            <div class="test-name">Marcus Reid</div>
+            <div class="test-role">Mathematics · Westbrook Academy</div>
+          </div>
+        </div>
+      </div>
+      <div class="test-card rv">
+        <p class="test-txt">My students actually read the feedback now. The AI writes in a tone that's warm and specific — they feel seen rather than rubber-stamped by a tired teacher at midnight.</p>
+        <div class="test-author">
+          <div class="test-ava">AL</div>
+          <div>
+            <div class="test-name">Amara Lee</div>
+            <div class="test-role">Science · Cedar Ridge School</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA SECTION -->
+<div class="cta-sec">
+  <div class="cta-box rv">
+    <div class="h-pill" style="margin-bottom:20px;display:inline-flex">
+      <div class="live-dot"></div> Free forever · No credit card needed
+    </div>
+    <h2>Ready to save 2+ hours a week?</h2>
+    <p>Join hundreds of educators already using Grader Genie to give better feedback, faster. Your students deserve it — and so does your Sunday.</p>
+    <div class="cta-btns">
+      <a href="homework-grader.html" class="btn bt blg btn-ring">
+        <i class="fas fa-wand-magic-sparkles"></i> Open Grader — It's Free
+      </a>
+      <button class="btn bg2 blg" onclick="openModal('signupModal')">
+        <i class="fas fa-user-plus"></i> Create account
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<footer class="site-ftr">
+  <div class="fbn"><span>Grader</span>Genie</div>
+  <div class="fsep"></div>
+  <span class="fc2">© 2026 Grader Genie</span>
+  <div class="fsep"></div>
+  <a href="homework-grader.html" class="flk">Open App</a>
+  <div class="fsep"></div>
+  <a href="#features" class="flk">Features</a>
+  <div class="fsep"></div>
+  <a href="#how" class="flk">How it works</a>
+  <div class="fsep"></div>
+  <a href="#testimonials" class="flk">Testimonials</a>
+</footer>
+
+<!-- LOGIN MODAL -->
+<div class="overlay" id="loginModal">
+  <div class="modal" style="max-width:420px">
+    <div class="mhd">
+      <div>
+        <div class="mtitle">Welcome back</div>
+        <div class="msub">Sign in to your Grader Genie account</div>
+      </div>
+      <button class="mcls" onclick="closeModal('loginModal')"><i class="fas fa-xmark"></i></button>
+    </div>
+    <div class="mbd" style="display:flex;flex-direction:column;gap:16px">
+      <div class="fg">
+        <label class="fl">Email address</label>
+        <input class="fc" type="email" id="li-email" placeholder="teacher@school.edu" autocomplete="email">
+      </div>
+      <div class="fg">
+        <label class="fl">Password</label>
+        <input class="fc" type="password" id="li-pw" placeholder="••••••••" autocomplete="current-password">
+      </div>
+      <button class="btn bt" style="width:100%;justify-content:center" onclick="handleLogin()">
+        <i class="fas fa-sign-in-alt"></i> Sign in
+      </button>
+      <div class="msw">Don't have an account? <a onclick="closeModal('loginModal');openModal('signupModal')">Create one free →</a></div>
+    </div>
+  </div>
+</div>
+
+<!-- SIGNUP MODAL -->
+<div class="overlay" id="signupModal">
+  <div class="modal" style="max-width:420px">
+    <div class="mhd">
+      <div>
+        <div class="mtitle">Create your account</div>
+        <div class="msub">Free forever · no credit card required</div>
+      </div>
+      <button class="mcls" onclick="closeModal('signupModal')"><i class="fas fa-xmark"></i></button>
+    </div>
+    <div class="mbd" style="display:flex;flex-direction:column;gap:16px">
+      <div class="fg">
+        <label class="fl">Full name</label>
+        <input class="fc" type="text" id="su-name" placeholder="Ms. Johnson">
+      </div>
+      <div class="fg">
+        <label class="fl">Email address</label>
+        <input class="fc" type="email" id="su-email" placeholder="teacher@school.edu">
+      </div>
+      <div class="fgrid">
+        <div class="fg">
+          <label class="fl">Password</label>
+          <input class="fc" type="password" id="su-pw" placeholder="Min. 6 characters">
+        </div>
+        <div class="fg">
+          <label class="fl">Confirm password</label>
+          <input class="fc" type="password" id="su-cpw" placeholder="Repeat">
+        </div>
+      </div>
+      <button class="btn bt" style="width:100%;justify-content:center" onclick="handleSignup()">
+        <i class="fas fa-rocket"></i> Create free account
+      </button>
+      <div class="msw">Already have an account? <a onclick="closeModal('signupModal');openModal('loginModal')">Sign in →</a></div>
+    </div>
+  </div>
+</div>
+
+<div class="twrap"></div>
+
+<script>
+const $  = s => document.querySelector(s);
+const $$ = s => document.querySelectorAll(s);
+
+/* ── Modals ── */
+function openModal(id)  { document.getElementById(id).classList.add('open');    document.body.style.overflow='hidden'; }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); document.body.style.overflow=''; }
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') $$('.overlay.open').forEach(o => { o.classList.remove('open'); document.body.style.overflow=''; });
+});
+$$('.overlay').forEach(o => o.addEventListener('click', e => {
+  if (e.target === o) { o.classList.remove('open'); document.body.style.overflow=''; }
+}));
+
+/* ── Toast ── */
+function toast(msg, type='info') {
+  const wrap = $('.twrap');
+  const t = document.createElement('div');
+  t.className = `toast t${type[0]}`;
+  const icons = { success:'fa-circle-check', error:'fa-circle-xmark', info:'fa-circle-info' };
+  t.innerHTML = `<i class="fas ${icons[type]||icons.info}"></i><span>${msg}</span>`;
+  wrap.appendChild(t);
+  setTimeout(() => { t.style.opacity='0'; t.style.transition='all .3s'; setTimeout(() => t.remove(), 300); }, 3500);
+}
+
+/* ── Auth ── */
+function handleLogin() {
+  const em = $('#li-email').value.trim();
+  const pw = $('#li-pw').value;
+  if (!em || !pw)             { toast('Fill in all fields','error'); return; }
+  if (!em.includes('@'))      { toast('Enter a valid email','error'); return; }
+  localStorage.setItem('gg_loggedIn','1');
+  localStorage.setItem('gg_email', em);
+  if (!localStorage.getItem('gg_name'))
+    localStorage.setItem('gg_name', em.split('@')[0].replace(/\b\w/g, c => c.toUpperCase()));
+  toast('Welcome back!','success');
+  setTimeout(() => { window.location.href = 'homework-grader.html'; }, 600);
+}
+function handleSignup() {
+  const nm = $('#su-name').value.trim();
+  const em = $('#su-email').value.trim();
+  const pw = $('#su-pw').value;
+  const cp = $('#su-cpw').value;
+  if (!nm || !em || !pw || !cp) { toast('Fill in all fields','error'); return; }
+  if (pw !== cp)                { toast('Passwords do not match','error'); return; }
+  if (pw.length < 6)            { toast('Password must be 6+ chars','error'); return; }
+  localStorage.setItem('gg_loggedIn','1');
+  localStorage.setItem('gg_name',  nm);
+  localStorage.setItem('gg_email', em);
+  toast('Account created!','success');
+  setTimeout(() => { window.location.href = 'homework-grader.html'; }, 600);
+}
+
+/* ── Animated counter ── */
+function animateCount(el, target, suffix='', duration=1800) {
+  let start = 0;
+  const step = ts => {
+    if (!start) start = ts;
+    const progress = Math.min((ts - start) / duration, 1);
+    const eased = 1 - Math.pow(1 - progress, 3);
+    el.textContent = Math.round(eased * target) + suffix;
+    if (progress < 1) requestAnimationFrame(step);
+  };
+  requestAnimationFrame(step);
+}
+
+/* ── Scroll reveal + counter trigger ── */
+const obs = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      e.target.style.animationPlayState = 'running';
+      // Trigger counters once proof row enters view
+      if (e.target.classList.contains('proof-row') && !e.target.dataset.counted) {
+        e.target.dataset.counted = '1';
+        animateCount($('#n-subs'),     48,  '', 2000);
+        animateCount($('#n-teachers'), 1200,'', 2200);
+        animateCount($('#n-hours'),    9400,'', 2400);
+      }
+    }
+  });
+}, { threshold: 0.12 });
+
+$$('.rv').forEach(el => {
+  el.style.animationPlayState = 'paused';
+  obs.observe(el);
+});
+</script>
+</body>
+</html>

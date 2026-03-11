@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Grader Genie — Dashboard</title>
+<link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<nav class="sidebar">
+  <div class="sb-logo">
+    <div class="lm">GG</div>
+    <div class="lt">Grader<span>Genie</span></div>
+  </div>
+  <div class="nav-grp">Main</div>
+  <button class="nav-item active" data-page="dashboard" onclick="navigate('dashboard',this)"><i class="fas fa-house"></i> Dashboard</button>
+  <button class="nav-item" data-page="grade" onclick="navigate('grade',this)"><i class="fas fa-pen-to-square"></i> Grade Submission</button>
+  <button class="nav-item" data-page="rubric" onclick="navigate('rubric',this);renderRubric()"><i class="fas fa-list-check"></i> Rubric Grader</button>
+
+  <div class="nav-grp">Insights</div>
+  <button class="nav-item" data-page="submissions" onclick="navigate('submissions',this)"><i class="fas fa-table-list"></i> Submissions</button>
+  <button class="nav-item" data-page="analytics" onclick="navigate('analytics',this)"><i class="fas fa-chart-line"></i> Analytics</button>
+  <button class="nav-item" data-page="students" onclick="navigate('students',this)"><i class="fas fa-users"></i> Students</button>
+  <button class="nav-item" data-page="leaderboard" onclick="navigate('leaderboard',this)"><i class="fas fa-trophy"></i> Leaderboard</button>
+  <button class="nav-item" data-page="assignments" onclick="navigate('assignments',this)"><i class="fas fa-clipboard-list"></i> Assignments</button>
+
+  <div class="nav-grp">Tools</div>
+  <button class="nav-item" data-page="notes" onclick="navigate('notes',this)"><i class="fas fa-note-sticky"></i> Quick Notes</button>
+  <button class="nav-item" onclick="exportData()"><i class="fas fa-file-code"></i> Export JSON</button>
+  <button class="nav-item" onclick="exportCSV()"><i class="fas fa-file-csv"></i> Export CSV</button>
+  <button class="nav-item" onclick="document.getElementById('importInput').click()"><i class="fas fa-file-import"></i> Import Data</button>
+  <input type="file" id="importInput" style="display:none" accept=".json" onchange="importData(event)">
+
+  <div class="nav-div"></div>
+  <div class="nav-grp">Account</div>
+  <button class="nav-item" data-page="profile" onclick="navigate('profile',this)"><i class="fas fa-user-circle"></i> My Profile</button>
+
+  <div class="sb-spacer"></div>
+  <div class="sb-user" onclick="navigate('profile',document.querySelector('[data-page=profile]'))">
+    <div class="sb-ava" id="sb-av">T</div>
+    <div><div class="sb-name" id="sb-name">Educator</div><div class="sb-role" id="sb-role">Lead Educator</div></div>
+    <button class="sb-logout" onclick="event.stopPropagation();logout()" title="Logout"><i class="fas fa-right-from-bracket"></i></button>
+  </div>
+</nav>
+
+<!-- MAIN CONTENT -->
+<main class="app-main">
+  <!-- TOPBAR -->
+  <div class="app-topbar">
+    <h1 class="topbar-title" id="topbar-title">Dashboard</h1>
+    <div class="topbar-search">
+      <i class="fas fa-magnifying-glass"></i>
+      <input type="text" id="topbar-search" placeholder="Search submissions…" oninput="onSearch()">
+    </div>
+    <div class="topbar-acts">
+      <button class="topbar-ico" title="Notifications" onclick="toast('No new notifications','info')">
+        <i class="fas fa-bell"></i><span class="notif-dot"></span>
+      </button>
+      <button class="topbar-ico" title="Refresh" onclick="if(curPage==='dashboard')renderDashboard();if(curPage==='submissions')renderTable();toast('Refreshed','success')">
+        <i class="fas fa-rotate-right"></i>
+      </button>
+      <button class="btn bt bsm" onclick="navigate('grade',document.querySelector('[data-page=grade]'))"><i class="fas fa-plus"></i> New Grade</button>
+    </div>
+  </div>
+
+  <!-- DASHBOARD PAGE -->
+  <div class="page active" id="pg-dashboard">
+    <div class="dash-banner">
+      <div>
+        <div class="db-title">Good morning! <span id="dbanner-name"></span> 👋</div>
+        <div class="db-sub">Here's how your class is doing today.</div>
+        <div class="db-meta"><i class="fas fa-calendar-day"></i> <span id="dbanner-date"></span></div>
+      </div>
+      <button class="btn bt bsm" style="margin-left:auto;position:relative;z-index:1" onclick="navigate('grade',document.querySelector('[data-page=grade]'))"><i class="fas fa-plus"></i> Add Grade</button>
+    </div>
+
+    <div class="stat-row">
+      <div class="stat-card sc-t"><div class="si si-t"><i class="fas fa-file-lines"></i></div><div><div class="sv" id="dash-total">—</div><div class="sl">Total Submissions</div></div></div>
+      <div class="stat-card sc-c"><div class="si si-c"><i class="fas fa-chart-simple"></i></div><div><div class="sv" id="dash-avg">—</div><div class="sl">Class Average</div></div></div>
+      <div class="stat-card sc-v"><div class="si si-v"><i class="fas fa-users"></i></div><div><div class="sv" id="dash-students">—</div><div class="sl">Students</div></div></div>
+      <div class="stat-card sc-e"><div class="si si-e"><i class="fas fa-circle-check"></i></div><div><div class="sv" id="dash-pass">—</div><div class="sl">Passing</div></div></div>
+      <div class="stat-card sc-g"><div class="si si-g"><i class="fas fa-percent"></i></div><div><div class="sv" id="dash-pct">—</div><div class="sl">Pass Rate</div></div></div>
+    </div>
+
+    <div class="two-col">
+      <div class="card">
+        <div class="chd"><span class="ctitle"><i class="fas fa-clock" style="color:var(--teal)"></i> Recent Activity</span>
+          <button class="btn bg2 bsm" onclick="navigate('submissions',document.querySelector('[data-page=submissions]'))">See all</button>
+        </div>
+        <div id="recent-list"></div>
+      </div>
+      <div class="card">
+        <div class="chd"><span class="ctitle"><i class="fas fa-chart-bar" style="color:var(--cyan)"></i> Grade Distribution</span></div>
+        <div class="cbody" id="dash-dist"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- GRADE PAGE -->
+  <div class="page" id="pg-grade">
+    <div class="two-col">
+      <div class="card">
+        <div class="chd">
+          <span class="ctitle"><i class="fas fa-pen-to-square" style="color:var(--teal)"></i> New Submission</span>
+          <button class="ai-btn" id="ai-btn" onclick="generateAI()">
+            <span class="ai-ico"><i class="fas fa-wand-magic-sparkles"></i></span>
+            <span class="ai-spinner"></span> Generate Feedback
+          </button>
+        </div>
+        <div class="cbody">
+          <form id="grade-form" style="display:flex;flex-direction:column;gap:16px" onsubmit="return false">
+            <datalist id="dl-names"></datalist>
+            <datalist id="dl-titles"></datalist>
+            <datalist id="dl-subjects"></datalist>
+            <div class="fgrid">
+              <div class="fg"><label class="fl">Student Name *</label><input class="fc" id="f-name" list="dl-names" placeholder="Alice Chen" autocomplete="off"></div>
+              <div class="fg"><label class="fl">Subject</label><input class="fc" id="f-subject" list="dl-subjects" placeholder="History, Science…" autocomplete="off"></div>
+              <div class="fg full"><label class="fl">Assignment Title *</label><input class="fc" id="f-title" list="dl-titles" placeholder="World War II Essay" autocomplete="off"></div>
+              <div class="fg full"><label class="fl">Student's Answer <span style="color:var(--t4);font-weight:400">(optional — improves generated feedback)</span></label>
+                <textarea class="fc" id="f-answer" placeholder="Paste the student's answer here…"></textarea>
+              </div>
+              <div class="fg">
+                <label class="fl">Grade (0–100) *</label>
+                <input class="fc" id="f-grade" type="number" min="0" max="100" placeholder="85" oninput="onGradeInput()">
+              </div>
+              <div class="fg" style="justify-content:center">
+                <label class="fl">Letter Grade</label>
+                <div class="letter-preview" id="grade-preview"></div>
+                <div class="pbar" style="margin-top:8px"><div class="pfill" id="grade-pbar" style="width:0%"></div></div>
+              </div>
+              <div class="fg full"><label class="fl">Feedback *</label>
+                <textarea class="fc" id="f-feedback" placeholder="Write feedback, or click Generate Feedback above…" style="min-height:130px"></textarea>
+              </div>
+            </div>
+          </form>
+        </div>
+        <div class="mft" style="background:transparent;border-top:1px solid var(--b1)">
+          <button class="btn bg2" onclick="clearForm()"><i class="fas fa-xmark"></i> Clear</button>
+          <button class="btn bt" onclick="submitGrade()"><i class="fas fa-circle-check"></i> Submit Grade</button>
+        </div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:18px">
+        <div class="card">
+          <div class="chd"><span class="ctitle"><i class="fas fa-circle-info" style="color:var(--cyan)"></i> Grading Tips</span></div>
+          <div class="cbody" style="font-size:13.5px;color:var(--t2);line-height:1.8;display:flex;flex-direction:column;gap:10px">
+            <div><i class="fas fa-lightbulb" style="color:var(--gold);margin-right:6px"></i>Paste the student's answer before generating feedback for more personalised results.</div>
+            <div><i class="fas fa-list-check" style="color:var(--teal);margin-right:6px"></i>Use the <strong style="color:var(--teal)">Rubric Grader</strong> to score complex assignments consistently.</div>
+            <div><i class="fas fa-chart-line" style="color:var(--violet);margin-right:6px"></i>Check <strong style="color:var(--violet)">Analytics</strong> regularly to catch underperforming students.</div>
+            <div><i class="fas fa-trophy" style="color:var(--coral);margin-right:6px"></i>The <strong style="color:var(--coral)">Leaderboard</strong> can motivate students — share it with your class!</div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="chd"><span class="ctitle"><i class="fas fa-fire-flame-curved" style="color:var(--coral)"></i> Recent Submissions</span></div>
+          <div id="grade-recent"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RUBRIC PAGE -->
+  <div class="page" id="pg-rubric">
+    <div class="two-col">
+      <div class="card">
+        <div class="chd">
+          <span class="ctitle"><i class="fas fa-list-check" style="color:var(--teal)"></i> Rubric Scoring</span>
+          <div style="display:flex;gap:8px">
+            <button class="btn bg2 bsm" onclick="resetRubric()"><i class="fas fa-rotate-left"></i> Reset</button>
+            <button class="btn bt bsm" onclick="applyRubricToGrade()"><i class="fas fa-arrow-right"></i> Apply to Grade</button>
+          </div>
+        </div>
+        <div class="cbody">
+          <div class="rubric-sum">
+            <div><div class="rub-big" id="rub-total">0</div><div class="rub-lbl">Total Score</div></div>
+            <div style="color:var(--t4);font-size:22px;font-weight:300">/ <span id="rub-max">100</span></div>
+            <div style="flex:1">
+              <div style="font-size:12px;color:var(--t3);margin-bottom:6px" id="rub-pct">0%</div>
+              <div class="pbar"><div class="pfill" id="rub-pbar" style="width:0%"></div></div>
+            </div>
+          </div>
+          <div class="rubric-grid" id="rub-grid"></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="chd"><span class="ctitle"><i class="fas fa-circle-info" style="color:var(--cyan)"></i> About Rubrics</span></div>
+        <div class="cbody" style="font-size:13.5px;color:var(--t2);line-height:1.8;display:flex;flex-direction:column;gap:12px">
+          <p>Rubrics ensure <strong style="color:var(--teal)">consistency</strong> across your class — every student is assessed on the same criteria.</p>
+          <p>The default rubric covers four criteria: <strong>Thesis & Argument</strong> (30 pts), <strong>Evidence & Sources</strong> (25 pts), <strong>Analysis & Depth</strong> (25 pts), and <strong>Writing & Clarity</strong> (20 pts).</p>
+          <p>Click score buttons on each criterion, then hit <strong style="color:var(--teal)">Apply to Grade</strong> to transfer the percentage to the Grade Submission form.</p>
+          <p style="color:var(--t3)">Tip: Complete the rubric before writing feedback so you have a grade context to work with.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SUBMISSIONS PAGE -->
+  <div class="page" id="pg-submissions">
+    <div class="card">
+      <div class="chd">
+        <span class="ctitle"><i class="fas fa-table-list" style="color:var(--teal)"></i> All Submissions</span>
+        <span class="badge bt2" id="sub-count">0 submissions</span>
+      </div>
+      <div style="display:flex;gap:10px;padding:14px 22px;border-bottom:1px solid var(--b1);flex-wrap:wrap">
+        <div class="topbar-search" style="flex:1;min-width:160px">
+          <i class="fas fa-magnifying-glass"></i>
+          <input type="text" id="sub-search" placeholder="Search…" style="flex:1;width:auto">
+        </div>
+        <select class="fc" id="filter-assignment" style="width:auto;padding:7px 30px 7px 11px" onchange="filterAssignment=this.value;pageCurrent=1;renderTable()"><option value="">All Assignments</option></select>
+        <select class="fc" id="filter-subject" style="width:auto;padding:7px 30px 7px 11px" onchange="filterSubject=this.value;pageCurrent=1;renderTable()"><option value="">All Subjects</option></select>
+        <select class="fc" id="filter-grade" style="width:110px;padding:7px 30px 7px 11px" onchange="filterGrade=this.value;pageCurrent=1;renderTable()">
+          <option value="">All Grades</option><option>A</option><option>B</option><option>C</option><option>D</option><option>F</option>
+        </select>
+      </div>
+      <div class="tw">
+        <table>
+          <thead><tr>
+            <th data-sort="studentName" onclick="sortBy('studentName')">Student <span class="si-arr">↕</span></th>
+            <th data-sort="homeworkTitle" onclick="sortBy('homeworkTitle')">Assignment <span class="si-arr">↕</span></th>
+            <th>Subject</th>
+            <th data-sort="grade" onclick="sortBy('grade')">Score <span class="si-arr">↕</span></th>
+            <th>Letter</th>
+            <th data-sort="date" onclick="sortBy('date')">Date <span class="si-arr">↕</span></th>
+            <th>Actions</th>
+          </tr></thead>
+          <tbody id="sub-tbody"></tbody>
+        </table>
+      </div>
+      <div class="pag-bar" id="pag-bar">
+        <span id="pag-left"></span>
+        <div class="pg-btns" id="pag-btns"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ANALYTICS PAGE -->
+  <div class="page" id="pg-analytics">
+    <div class="stat-row">
+      <div class="stat-card sc-t"><div class="si si-t"><i class="fas fa-arrow-up"></i></div><div><div class="sv" id="an-high">—</div><div class="sl">Highest</div></div></div>
+      <div class="stat-card sc-r"><div class="si si-r"><i class="fas fa-arrow-down"></i></div><div><div class="sv" id="an-low">—</div><div class="sl">Lowest</div></div></div>
+      <div class="stat-card sc-g"><div class="si si-g"><i class="fas fa-equals"></i></div><div><div class="sv" id="an-med">—</div><div class="sl">Median</div></div></div>
+      <div class="stat-card sc-c"><div class="si si-c"><i class="fas fa-wave-square"></i></div><div><div class="sv" id="an-avg">—</div><div class="sl">Mean</div></div></div>
+      <div class="stat-card sc-v"><div class="si si-v"><i class="fas fa-shuffle"></i></div><div><div class="sv" id="an-std">—</div><div class="sl">Std Dev</div></div></div>
+      <div class="stat-card sc-e"><div class="si si-e"><i class="fas fa-circle-check"></i></div><div><div class="sv" id="an-pass">—</div><div class="sl">Pass Rate</div></div></div>
+    </div>
+    <div class="two-col">
+      <div class="card">
+        <div class="chd"><span class="ctitle"><i class="fas fa-chart-bar" style="color:var(--cyan)"></i> Grade Distribution</span></div>
+        <div class="cbody" id="an-dist"></div>
+      </div>
+      <div class="card">
+        <div class="chd"><span class="ctitle"><i class="fas fa-chart-line" style="color:var(--violet)"></i> Grade Trend (last 10)</span></div>
+        <div class="cbody"><div id="grade-trend" style="min-height:130px"></div></div>
+      </div>
+    </div>
+    <div class="two-col">
+      <div class="card">
+        <div class="chd"><span class="ctitle"><i class="fas fa-medal" style="color:var(--gold)"></i> Top Performers</span></div>
+        <div id="top-performers"></div>
+      </div>
+      <div class="card">
+        <div class="chd"><span class="ctitle"><i class="fas fa-book" style="color:var(--coral)"></i> Subject Breakdown</span></div>
+        <div id="subj-list"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STUDENTS PAGE -->
+  <div class="page" id="pg-students">
+    <div class="student-grid" id="student-grid"></div>
+  </div>
+
+  <!-- LEADERBOARD PAGE -->
+  <div class="page" id="pg-leaderboard">
+    <div class="card" style="max-width:700px;margin:0 auto">
+      <div class="chd">
+        <span class="ctitle"><i class="fas fa-trophy" style="color:var(--gold)"></i> Class Leaderboard</span>
+        <span class="badge bvt">By average grade</span>
+      </div>
+      <div id="lb-list"></div>
+    </div>
+  </div>
+
+  <!-- ASSIGNMENTS PAGE -->
+  <div class="page" id="pg-assignments">
+    <div class="card" style="margin-bottom:20px">
+      <div class="chd"><span class="ctitle"><i class="fas fa-clipboard-list" style="color:var(--teal)"></i> Assignment Completion Tracker</span></div>
+    </div>
+    <div class="assign-grid" id="ass-grid"></div>
+  </div>
+
+  <!-- NOTES PAGE -->
+  <div class="page" id="pg-notes">
+    <div style="max-width:600px">
+      <div class="card">
+        <div class="chd">
+          <span class="ctitle"><i class="fas fa-note-sticky" style="color:var(--gold)"></i> Quick Notes</span>
+          <button class="btn bg2 bsm" onclick="saveNote()"><i class="fas fa-floppy-disk"></i> Save</button>
+        </div>
+        <div class="cbody">
+          <div class="note-card">
+            <textarea id="notes-area" placeholder="Jot down lesson reminders, parent-meeting notes, exam dates, or anything else…"></textarea>
+          </div>
+          <div style="font-size:12px;color:var(--t4);margin-top:10px"><i class="fas fa-lock" style="margin-right:4px"></i> Notes are saved locally on this device only.</div>
+        </div>
+      </div>
+      <div class="card" style="margin-top:18px">
+        <div class="chd"><span class="ctitle">Saved Notes</span></div>
+        <div id="saved-notes-list" class="cbody"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PROFILE PAGE -->
+  <div class="page" id="pg-profile">
+    <div class="profile-banner">
+      <div class="pf-ava-wrap">
+        <div class="pf-ava" id="pf-av">T
+          <div class="pf-badge"><i class="fas fa-check"></i></div>
+        </div>
+      </div>
+      <div class="pf-info">
+        <div class="pf-name" id="pf-name">Educator</div>
+        <div class="pf-role-lbl" id="pf-role"><i class="fas fa-graduation-cap"></i> Lead Educator</div>
+        <div class="pf-email-lbl" id="pf-email"><i class="fas fa-envelope"></i> —</div>
+        <div class="pf-stats">
+          <div><div class="pf-stat-num" id="pf-total">—</div><div class="pf-stat-lbl">Submissions</div></div>
+          <div><div class="pf-stat-num" id="pf-avg">—</div><div class="pf-stat-lbl">Class Avg</div></div>
+          <div><div class="pf-stat-num" id="pf-students">—</div><div class="pf-stat-lbl">Students</div></div>
+        </div>
+      </div>
+      <button class="btn bt bsm" style="align-self:flex-start;position:relative;z-index:1" onclick="openEditProfile()"><i class="fas fa-pen"></i> Edit Profile</button>
+    </div>
+
+    <div class="p-tabs">
+      <button class="p-tab active" data-tab="info" onclick="switchProfileTab('info')">Account Info</button>
+      <button class="p-tab" data-tab="activity" onclick="switchProfileTab('activity')">Activity</button>
+      <button class="p-tab" data-tab="prefs" onclick="switchProfileTab('prefs')">Preferences</button>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+      <div class="p-tab-content active" data-tab="info">
+        <div class="card">
+          <div class="chd"><span class="ctitle">Profile Information</span></div>
+          <div class="cbody">
+            <div class="pf-field-row"><span class="pf-field-lbl">Full Name</span><span class="pf-field-val" id="pfi-name">—</span></div>
+            <div class="pf-field-row"><span class="pf-field-lbl">Email</span><span class="pf-field-val" id="pfi-email">—</span></div>
+            <div class="pf-field-row"><span class="pf-field-lbl">School</span><span class="pf-field-val" id="pfi-school">—</span></div>
+            <div class="pf-field-row"><span class="pf-field-lbl">Role</span><span class="pf-field-val">Lead Educator</span></div>
+            <div class="pf-field-row"><span class="pf-field-lbl">Bio</span><span class="pf-field-val" id="pfi-bio">—</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="p-tab-content" data-tab="activity">
+        <div class="card">
+          <div class="chd"><span class="ctitle">Recent Activity</span></div>
+          <div class="cbody" id="act-list"></div>
+        </div>
+      </div>
+      <div class="p-tab-content" data-tab="prefs" style="grid-column:1/-1">
+        <div class="card">
+          <div class="chd"><span class="ctitle">Preferences</span></div>
+          <div class="cbody">
+            <div class="pref-row"><div><div class="pref-lbl">Email notifications</div><div class="pref-sub">Receive weekly grade summary emails</div></div><label class="toggle"><input type="checkbox" checked><span class="tgl-sl"></span></label></div>
+            <div class="pref-row"><div><div class="pref-lbl">Auto-generate feedback</div><div class="pref-sub">Auto-generate feedback when a grade is submitted</div></div><label class="toggle"><input type="checkbox"><span class="tgl-sl"></span></label></div>
+            <div class="pref-row"><div><div class="pref-lbl">Show leaderboard to students</div><div class="pref-sub">Allow students to view class rankings</div></div><label class="toggle"><input type="checkbox" checked><span class="tgl-sl"></span></label></div>
+            <div class="pref-row" style="border-top:1px solid var(--b2);margin-top:16px;padding-top:16px">
+              <div><div class="pref-lbl" style="color:var(--red)">Delete all data</div><div class="pref-sub">Permanently remove all submissions and settings</div></div>
+              <button class="btn brd bsm" onclick="if(confirm('Delete ALL data? This cannot be undone.')){feedbackData=[];renderDashboard();toast('All data cleared','info')}">Delete</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- APP FOOTER -->
+  <footer class="app-footer">
+    <div class="afb"><span>Grader</span>Genie</div>
+    <div class="afs"></div>
+    <span class="afc">v3.0</span>
+    <div class="afs"></div>
+    <span class="afc">© 2026 Grader Genie · Demo Mode</span>
+  </footer>
+</main>
+
+<!-- EDIT SUBMISSION MODAL -->
+<div class="overlay" id="editModal">
+  <div class="modal">
+    <div class="mhd"><div><div class="mtitle">Edit Submission</div></div><button class="mcls" onclick="closeModal('editModal')"><i class="fas fa-xmark"></i></button></div>
+    <div class="mbd" style="display:flex;flex-direction:column;gap:14px">
+      <div class="fgrid">
+        <div class="fg"><label class="fl">Student</label><input class="fc" id="em-name"></div>
+        <div class="fg"><label class="fl">Subject</label><input class="fc" id="em-subject"></div>
+        <div class="fg full"><label class="fl">Assignment Title</label><input class="fc" id="em-title"></div>
+        <div class="fg"><label class="fl">Grade (0–100)</label><input class="fc" id="em-grade" type="number" min="0" max="100"></div>
+        <div class="fg full"><label class="fl">Feedback</label><textarea class="fc" id="em-feedback" style="min-height:100px"></textarea></div>
+      </div>
+    </div>
+    <div class="mft"><button class="btn bg2" onclick="closeModal('editModal')">Cancel</button><button class="btn bt" id="em-save">Save Changes</button></div>
+  </div>
+</div>
+
+<!-- VIEW SUBMISSION MODAL -->
+<div class="overlay" id="viewModal">
+  <div class="modal" style="max-width:560px">
+    <div class="mhd">
+      <div><div class="mtitle" id="vm-student">Student</div><div class="msub" id="vm-title">Assignment</div></div>
+      <button class="mcls" onclick="closeModal('viewModal')"><i class="fas fa-xmark"></i></button>
+    </div>
+    <div class="mbd" style="display:flex;flex-direction:column;gap:16px">
+      <div style="display:flex;align-items:center;gap:12px">
+        <div id="vm-grade"></div><div id="vm-subject"></div>
+        <span style="margin-left:auto;font-size:12px;color:var(--t4)" id="vm-date"></span>
+      </div>
+      <div>
+        <div class="fl" style="margin-bottom:6px">Feedback</div>
+        <div style="background:var(--s2);border:1px solid var(--b1);border-radius:var(--r8);padding:13px;font-size:14px;line-height:1.75;color:var(--t1)" id="vm-feedback"></div>
+      </div>
+      <div>
+        <div class="fl" style="margin-bottom:6px">Student Answer</div>
+        <div style="background:var(--s2);border:1px solid var(--b1);border-radius:var(--r8);padding:13px;font-size:13.5px;line-height:1.7;color:var(--t3);max-height:160px;overflow-y:auto" id="vm-answer"></div>
+      </div>
+    </div>
+    <div class="mft"><button class="btn bt" onclick="closeModal('viewModal')">Done</button></div>
+  </div>
+</div>
+
+<!-- STUDENT DETAIL MODAL -->
+<div class="overlay" id="studentModal">
+  <div class="modal" style="max-width:540px">
+    <div class="mhd">
+      <div><div class="mtitle" id="sdm-name">Student</div><div class="msub" id="sdm-sub"></div></div>
+      <button class="mcls" onclick="closeModal('studentModal')"><i class="fas fa-xmark"></i></button>
+    </div>
+    <div class="mbd" style="display:flex;flex-direction:column;gap:16px">
+      <div class="stat-row" style="grid-template-columns:repeat(3,1fr)">
+        <div class="stat-card sc-t"><div class="si si-t"><i class="fas fa-chart-simple"></i></div><div><div class="sv" id="sdm-avg">—</div><div class="sl">Average</div></div></div>
+        <div class="stat-card sc-c"><div class="si si-c"><i class="fas fa-star"></i></div><div><div class="sv" id="sdm-best">—</div><div class="sl">Best</div></div></div>
+        <div class="stat-card sc-r"><div class="si si-r"><i class="fas fa-arrow-down"></i></div><div><div class="sv" id="sdm-low">—</div><div class="sl">Lowest</div></div></div>
+      </div>
+      <div id="sdm-list" style="max-height:260px;overflow-y:auto"></div>
+    </div>
+    <div class="mft"><button class="btn bt" onclick="closeModal('studentModal')">Close</button></div>
+  </div>
+</div>
+
+<!-- EDIT PROFILE MODAL -->
+<div class="overlay" id="editProfileModal">
+  <div class="modal" style="max-width:440px">
+    <div class="mhd"><div><div class="mtitle">Edit Profile</div></div><button class="mcls" onclick="closeModal('editProfileModal')"><i class="fas fa-xmark"></i></button></div>
+    <div class="mbd" style="display:flex;flex-direction:column;gap:14px">
+      <div class="fg"><label class="fl">Full Name</label><input class="fc" id="epm-name" placeholder="Ms. Johnson"></div>
+      <div class="fg"><label class="fl">Email</label><input class="fc" id="epm-email" type="email" placeholder="teacher@school.edu"></div>
+      <div class="fg"><label class="fl">School / Institution</label><input class="fc" id="epm-school" placeholder="Westbrook Academy"></div>
+      <div class="fg"><label class="fl">Bio</label><textarea class="fc" id="epm-bio" placeholder="A few words about yourself…"></textarea></div>
+    </div>
+    <div class="mft"><button class="btn bg2" onclick="closeModal('editProfileModal')">Cancel</button><button class="btn bt" onclick="saveProfile()">Save Profile</button></div>
+  </div>
+</div>
+
+<div class="twrap"></div>
+<script src="app.js"></script>
+<script>
+// Date & name in banner
+const now = new Date();
+const db = document.getElementById('dbanner-date');
+if (db) db.textContent = now.toLocaleDateString('en-US',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+const dn = document.getElementById('dbanner-name');
+if (dn) dn.textContent = (localStorage.getItem('gg_name')||'').split(' ')[0];
+
+// Recent list on grade page
+(function(){
+  const el = document.getElementById('grade-recent'); if (!el) return;
+  const recent = [...feedbackData].sort((a,b)=>new Date(b.date)-new Date(a.date)).slice(0,4);
+  el.innerHTML = recent.map(r=>`
+    <div class="r-row">
+      <div><div class="rr-name">${r.studentName}</div><div class="rr-sub">${r.homeworkTitle}</div></div>
+      <span class="badge ${gradeClass(r.letterGrade)}">${r.letterGrade}</span>
+    </div>`).join('');
+})();
+
+// Notes
+function saveNote(){
+  const t=document.getElementById('notes-area').value.trim();
+  if(!t){toast('Nothing to save','error');return}
+  const notes=JSON.parse(localStorage.getItem('gg_notes')||'[]');
+  notes.unshift({text:t,date:new Date().toISOString()});
+  localStorage.setItem('gg_notes',JSON.stringify(notes.slice(0,20)));
+  document.getElementById('notes-area').value='';
+  loadNotes();toast('Note saved!','success');
+}
+function loadNotes(){
+  const el=document.getElementById('saved-notes-list');if(!el)return;
+  const notes=JSON.parse(localStorage.getItem('gg_notes')||'[]');
+  if(!notes.length){el.innerHTML='<p style="color:var(--t4);font-size:13px">No saved notes yet.</p>';return}
+  el.innerHTML=notes.map((n,i)=>`
+    <div style="border-bottom:1px solid var(--b1);padding:12px 0;display:flex;align-items:flex-start;justify-content:space-between;gap:12px">
+      <div style="font-size:13.5px;color:var(--t2);line-height:1.65;white-space:pre-wrap">${n.text}</div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0">
+        <span style="font-size:11px;color:var(--t4)">${new Date(n.date).toLocaleDateString()}</span>
+        <button class="act-btn d" onclick="deleteNote(${i})"><i class="fas fa-trash"></i></button>
+      </div>
+    </div>`).join('');
+}
+function deleteNote(i){
+  const notes=JSON.parse(localStorage.getItem('gg_notes')||'[]');
+  notes.splice(i,1);localStorage.setItem('gg_notes',JSON.stringify(notes));
+  loadNotes();toast('Note deleted','info');
+}
+loadNotes();
+
+// Auth guard
+if(!localStorage.getItem('gg_loggedIn')){window.location.href='index.html'}
+</script>
+</body>
+</html>
